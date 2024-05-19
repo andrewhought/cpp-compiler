@@ -36,6 +36,6 @@ void InputBuffer::GetChar(char& c)
 string InputBuffer::UngetString(string s)
 {
     for (int i = 0; i < s.size(); i++)
-        input_buffer.push_back(s[s.size()-i-1]);
+        input_buffer.push_back(s[s.size() - i - 1]);
     return s;
 }

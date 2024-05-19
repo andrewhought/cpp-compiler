@@ -79,15 +79,15 @@ TokenType LexicalAnalyzer::FindKeywordIndex(string s)
 Token LexicalAnalyzer::ScanNumber()
 {
     char c;
-    std::string production;
-    std::string suffix;
+    std::string production = "";
+    std::string suffix = "";
+    std::string remainder = "";
 
     input.GetChar(c);
     if (isdigit(c)) {
         if (c == '0') {
-            production = "0";
+            production += '0';
         } else {
-            production = "";
             while (!input.EndOfInput() && isxdigit(c)) {
                 production += c;
                 input.GetChar(c);
@@ -98,19 +98,29 @@ Token LexicalAnalyzer::ScanNumber()
         }
         input.GetChar(c);
         if (c == 'x') {
-            suffix = "";
             suffix += c;
             input.GetChar(c);
-            while (!input.EndOfInput() && isxdigit(c)) {
+            while (!input.EndOfInput() && isalnum(c)) {
                 suffix += c;
                 input.GetChar(c);
-                if (suffix == "x08" || suffix == "x16") { // FIX
+                if (suffix == "x16") {
+                    input.UngetChar(c);
                     tmp.lexeme = production + suffix;
                     tmp.token_type = BASE16NUM;
                     tmp.line_no = line_no;
                     return tmp;
                 }
+                if (suffix == "x08") {
+                    input.UngetChar(c);
+                    tmp.lexeme = production + suffix;
+                    tmp.token_type = BASE08NUM;
+                    tmp.line_no = line_no;
+                    return tmp;
+                }
             }
+            input.UngetChar(c);
+            BacktrackOrNum(production, suffix);
+            return tmp;
         }
         if (c == '.') {
             suffix += c;
@@ -119,14 +129,27 @@ Token LexicalAnalyzer::ScanNumber()
                 suffix += c;
                 input.GetChar(c);
             }
+            if (suffix == ".") {
+                input.UngetChar(c);
+                input.UngetString(suffix);
+                tmp.lexeme = production;
+                tmp.token_type = NUM;
+                tmp.line_no = line_no;
+                return tmp;
+            }
+            while (c != '\n') {
+                remainder += c;
+                input.GetChar(c);
+            }
+            input.UngetChar(c);
+            input.UngetString(remainder);
             tmp.lexeme = production + suffix;
             tmp.token_type = REALNUM;
             tmp.line_no = line_no;
             return tmp;
         }
         input.UngetChar(c);
-        tmp.token_type = NUM;
-        tmp.line_no = line_no;
+        BacktrackOrNum(production, suffix);
         return tmp;
     } else {
         if (!input.EndOfInput()) {
@@ -165,6 +188,29 @@ Token LexicalAnalyzer::ScanIdOrKeyword()
         tmp.lexeme = "";
         tmp.token_type = ERROR;
     }
+    return tmp;
+}
+
+Token LexicalAnalyzer::BacktrackOrNum(std::string production, std::string suffix) {
+    int size = 0;
+    char c;
+    std::string remainder = "";
+
+    input.GetChar(c);
+    production += suffix;
+    while (!production.empty() && isdigit(production[size])) {
+        tmp.lexeme += production[size];
+        size++;
+    }
+    for (int i = size; i < production.size(); i++) {
+        remainder += production[i];
+    }
+    input.UngetChar(c);
+    if (!remainder.empty()) {
+        input.UngetString(remainder);
+    }
+    tmp.token_type = NUM;
+    tmp.line_no = line_no;
     return tmp;
 }
 

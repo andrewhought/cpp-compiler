@@ -53,6 +53,7 @@ class LexicalAnalyzer {
     TokenType FindKeywordIndex(std::string);
     Token ScanNumber();
     Token ScanIdOrKeyword();
+    Token BacktrackOrNum(std::string production, std::string);
 };
 
 #endif  //__LEXER__H__
