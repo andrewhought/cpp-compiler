@@ -3,10 +3,15 @@
  *
  * Do not share this file with anyone
  */
+
 #ifndef __INPUT_BUFFER__H__
 #define __INPUT_BUFFER__H__
 
+#include <iostream>
+#include <istream>
+#include <vector>
 #include <string>
+#include <cstdio>
 
 class InputBuffer {
   public:

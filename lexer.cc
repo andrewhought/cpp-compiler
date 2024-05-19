@@ -3,14 +3,8 @@
  *
  * Do not share this file with anyone
  */
-#include <iostream>
-#include <istream>
-#include <vector>
-#include <string>
-#include <cctype>
 
 #include "lexer.h"
-#include "inputbuf.h"
 
 using namespace std;
 
@@ -20,7 +14,8 @@ string reserved[] = { "END_OF_FILE",
     "EQUAL", "COLON", "COMMA", "SEMICOLON",
     "LBRAC", "RBRAC", "LPAREN", "RPAREN",
     "NOTEQUAL", "GREATER", "LESS", "LTEQ", "GTEQ",
-    "DOT", "NUM", "ID", "ERROR" // TODO: Add labels for new token types here (as string)
+    "DOT", "NUM", "ID", "ERROR", "REALNUM",
+    "BASE08NUM", "BASE16NUM"
 };
 
 #define KEYWORDS_COUNT 5
@@ -84,22 +79,52 @@ TokenType LexicalAnalyzer::FindKeywordIndex(string s)
 Token LexicalAnalyzer::ScanNumber()
 {
     char c;
+    std::string production;
+    std::string suffix;
 
     input.GetChar(c);
     if (isdigit(c)) {
         if (c == '0') {
-            tmp.lexeme = "0";
+            production = "0";
         } else {
-            tmp.lexeme = "";
-            while (!input.EndOfInput() && isdigit(c)) {
-                tmp.lexeme += c;
+            production = "";
+            while (!input.EndOfInput() && isxdigit(c)) {
+                production += c;
                 input.GetChar(c);
             }
             if (!input.EndOfInput()) {
                 input.UngetChar(c);
             }
         }
-        // TODO: You can check for REALNUM, BASE08NUM and BASE16NUM here!
+        input.GetChar(c);
+        if (c == 'x') {
+            suffix = "";
+            suffix += c;
+            input.GetChar(c);
+            while (!input.EndOfInput() && isxdigit(c)) {
+                suffix += c;
+                input.GetChar(c);
+                if (suffix == "x08" || suffix == "x16") { // FIX
+                    tmp.lexeme = production + suffix;
+                    tmp.token_type = BASE16NUM;
+                    tmp.line_no = line_no;
+                    return tmp;
+                }
+            }
+        }
+        if (c == '.') {
+            suffix += c;
+            input.GetChar(c);
+            while (!input.EndOfInput() && isdigit(c)) {
+                suffix += c;
+                input.GetChar(c);
+            }
+            tmp.lexeme = production + suffix;
+            tmp.token_type = REALNUM;
+            tmp.line_no = line_no;
+            return tmp;
+        }
+        input.UngetChar(c);
         tmp.token_type = NUM;
         tmp.line_no = line_no;
         return tmp;
@@ -158,7 +183,7 @@ Token LexicalAnalyzer::ScanIdOrKeyword()
 //
 // if you want to unget all three tokens. Note that it does not
 // make sense to unget t1 without first ungetting t2 and t3
-//
+
 TokenType LexicalAnalyzer::UngetToken(Token tok)
 {
     tokens.push_back(tok);;

@@ -3,11 +3,6 @@
  *
  * Do not share this file with anyone
  */
-#include <iostream>
-#include <istream>
-#include <vector>
-#include <string>
-#include <cstdio>
 
 #include "inputbuf.h"
 
@@ -24,7 +19,7 @@ bool InputBuffer::EndOfInput()
 char InputBuffer::UngetChar(char c)
 {
     if (c != EOF)
-        input_buffer.push_back(c);;
+        input_buffer.push_back(c);
     return c;
 }
 

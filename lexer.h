@@ -3,11 +3,15 @@
  *
  * Do not share this file with anyone
  */
+
 #ifndef __LEXER__H__
 #define __LEXER__H__
 
+#include <iostream>
+#include <istream>
 #include <vector>
 #include <string>
+#include <cctype>
 
 #include "inputbuf.h"
 
@@ -18,8 +22,9 @@ typedef enum { END_OF_FILE = 0,
     PLUS, MINUS, DIV, MULT,
     EQUAL, COLON, COMMA, SEMICOLON,
     LBRAC, RBRAC, LPAREN, RPAREN,
-    NOTEQUAL, GREATER, LESS, LTEQ, GTEQ,
-    DOT, NUM, ID, ERROR // TODO: Add labels for new token types here
+    NOTEQUAL, GREATER, LESS, LTEQ,
+    GTEQ, DOT, NUM, ID, ERROR,
+    REALNUM, BASE08NUM, BASE16NUM,
 } TokenType;
 
 class Token {
@@ -46,8 +51,8 @@ class LexicalAnalyzer {
     bool SkipSpace();
     bool IsKeyword(std::string);
     TokenType FindKeywordIndex(std::string);
-    Token ScanIdOrKeyword();
     Token ScanNumber();
+    Token ScanIdOrKeyword();
 };
 
 #endif  //__LEXER__H__
