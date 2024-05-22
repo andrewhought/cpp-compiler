@@ -50,10 +50,11 @@ class LexicalAnalyzer {
 
     bool SkipSpace();
     bool IsKeyword(std::string);
+    bool isOctal(std::string);
     TokenType FindKeywordIndex(std::string);
     Token ScanNumber();
     Token ScanIdOrKeyword();
-    Token BacktrackOrNum(std::string production, std::string);
+    Token BacktrackOrNum(std::string, std::string);
 };
 
 #endif  //__LEXER__H__

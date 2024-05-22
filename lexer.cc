@@ -66,6 +66,15 @@ bool LexicalAnalyzer::IsKeyword(string s)
     return false;
 }
 
+bool LexicalAnalyzer::isOctal(std::string production) {
+    for (char c : production) {
+        if (c < '0' || c > '7') {
+            return false;
+        }
+    }
+    return true;
+}
+
 TokenType LexicalAnalyzer::FindKeywordIndex(string s)
 {
     for (int i = 0; i < KEYWORDS_COUNT; i++) {
@@ -110,7 +119,7 @@ Token LexicalAnalyzer::ScanNumber()
                     tmp.line_no = line_no;
                     return tmp;
                 }
-                if (suffix == "x08") {
+                if (suffix == "x08" && isOctal(production)) {
                     input.UngetChar(c);
                     tmp.lexeme = production + suffix;
                     tmp.token_type = BASE08NUM;
@@ -214,21 +223,23 @@ Token LexicalAnalyzer::BacktrackOrNum(std::string production, std::string suffix
     return tmp;
 }
 
-// you should unget tokens in the reverse order in which they
-// are obtained. If you execute
-//
-//    t1 = lexer.GetToken();
-//    t2 = lexer.GetToken();
-//    t3 = lexer.GetToken();
-//
-// in this order, you should execute
-//
-//    lexer.UngetToken(t3);
-//    lexer.UngetToken(t2);
-//    lexer.UngetToken(t1);
-//
-// if you want to unget all three tokens. Note that it does not
-// make sense to unget t1 without first ungetting t2 and t3
+/*
+ * you should unget tokens in the reverse order in which they
+ * are obtained. If you execute
+ *
+ * t1 = lexer.GetToken();
+ * t2 = lexer.GetToken();
+ * t3 = lexer.GetToken();
+ *
+ * in this order, you should execute
+ *
+ * lexer.UngetToken(t3);
+ * lexer.UngetToken(t2);
+ * lexer.UngetToken(t1);
+ *
+ *  if you want to unget all three tokens. Note that it does not
+ *  make sense to unget t1 without first ungetting t2 and t3
+ */
 
 TokenType LexicalAnalyzer::UngetToken(Token tok)
 {
@@ -240,9 +251,11 @@ Token LexicalAnalyzer::GetToken()
 {
     char c;
 
-    // if there are tokens that were previously
-    // stored due to UngetToken(), pop a token and
-    // return it without reading from input
+    /*
+     * if there are tokens that were previously
+     * stored due to UngetToken(), pop a token and
+     * return it without reading from input
+     */
     if (!tokens.empty()) {
         tmp = tokens.back();
         tokens.pop_back();
