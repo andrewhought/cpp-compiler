@@ -7,6 +7,9 @@
 #ifndef __INPUT_BUFFER__H__
 #define __INPUT_BUFFER__H__
 
+#include <algorithm>
+#include <unordered_map>
+#include <utility>
 #include <iostream>
 #include <istream>
 #include <vector>

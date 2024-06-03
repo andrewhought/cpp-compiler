@@ -104,7 +104,7 @@ void LexicalAnalyzer::SaveToken(Token tok)
     tokens.push_back(tok);
 }
 
-void LexicalAnalyzer::GetTokens()
+void LexicalAnalyzer::Tokenize()
 {
     char c;
 

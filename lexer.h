@@ -24,7 +24,7 @@ class LexicalAnalyzer {
     public:
         std::vector<Token> tokens;
 
-        void GetTokens();
+        void Tokenize();
         void SaveToken(Token tok);
         LexicalAnalyzer();
 
