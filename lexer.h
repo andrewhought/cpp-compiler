@@ -1,60 +1,43 @@
 /*
- * Copyright (C) Rida Bazzi, 2016
- *
- * Do not share this file with anyone
+ * Copyright (C) Andrew Houghton, 2024
  */
 
 #ifndef __LEXER__H__
 #define __LEXER__H__
 
-#include <iostream>
-#include <istream>
-#include <vector>
-#include <string>
-#include <cctype>
-
 #include "inputbuf.h"
 
-// ------- token types -------------------
-
 typedef enum { END_OF_FILE = 0,
-    IF, WHILE, DO, THEN, PRINT,
-    PLUS, MINUS, DIV, MULT,
-    EQUAL, COLON, COMMA, SEMICOLON,
-    LBRAC, RBRAC, LPAREN, RPAREN,
-    NOTEQUAL, GREATER, LESS, LTEQ,
-    GTEQ, DOT, NUM, ID, ERROR,
-    REALNUM, BASE08NUM, BASE16NUM,
+    PUBLIC, PRIVATE, EQUAL, COLON,
+    COMMA, SEMICOLON, LBRACE, RBRACE,
+    ID, ERROR
 } TokenType;
 
 class Token {
-  public:
-    void Print();
-
-    std::string lexeme;
-    TokenType token_type;
-    int line_no;
+    public:
+        std::string lexeme;
+        TokenType token_type;
+        int line_no;
 };
 
 class LexicalAnalyzer {
-  public:
-    Token GetToken();
-    TokenType UngetToken(Token);
-    LexicalAnalyzer();
+    public:
+        std::vector<Token> tokens;
 
-  private:
-    std::vector<Token> tokens;
-    int line_no;
-    Token tmp;
-    InputBuffer input;
+        void GetTokens();
+        void SaveToken(Token tok);
+        LexicalAnalyzer();
 
-    bool SkipSpace();
-    bool IsKeyword(std::string);
-    bool isOctal(std::string);
-    TokenType FindKeywordIndex(std::string);
-    Token ScanNumber();
-    Token ScanIdOrKeyword();
-    Token BacktrackOrNum(std::string, std::string);
+    private:
+        int line_no;
+        Token tmp;
+        InputBuffer input;
+
+        void SkipSpace();
+        void SkipComment();
+        bool IsKeyword(std::string);
+        TokenType FindKeywordIndex(std::string);
+        Token ScanIdOrKeyword();
 };
 
 #endif  //__LEXER__H__

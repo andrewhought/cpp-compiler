@@ -1,5 +1,5 @@
 a.out :main.o inputbuf.o lexer.o parser.o
-	g++ -o compiler main.o inputbuf.o lexer.o parser.o
+	g++ -o a.out main.o inputbuf.o lexer.o parser.o
 
 main.o :main.cc
 	g++ -c main.cc
@@ -14,4 +14,4 @@ parser.o :parser.cc parser.h
 	g++ -c parser.cc
 
 clean :
-	rm *.o compiler
+	rm *.o a.out
