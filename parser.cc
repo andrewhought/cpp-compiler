@@ -147,6 +147,11 @@ void Parser::ParseScope()
     if (tmp.token_type != RBRACE) {
         SyntaxError();
     }
+
+    vis.scopes.pop_back();
+    if (!vis.scopes.empty()) {
+        vis.scope = vis.scopes.back();
+    }
 }
 
 void Parser::ParsePublicVars()

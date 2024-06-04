@@ -7,6 +7,8 @@
 
 #include "inputbuf.h"
 
+using namespace std;
+
 typedef enum { END_OF_FILE = 0,
     PUBLIC, PRIVATE, EQUAL, COLON,
     COMMA, SEMICOLON, LBRACE, RBRACE,
@@ -15,14 +17,14 @@ typedef enum { END_OF_FILE = 0,
 
 class Token {
     public:
-        std::string lexeme;
+        string lexeme;
         TokenType token_type;
         int line_no;
 };
 
 class LexicalAnalyzer {
     public:
-        std::vector<Token> tokens;
+        vector<Token> tokens;
 
         void Tokenize();
         void SaveToken(Token tok);
@@ -35,8 +37,8 @@ class LexicalAnalyzer {
 
         void SkipSpace();
         void SkipComment();
-        bool IsKeyword(std::string);
-        TokenType FindKeywordIndex(std::string);
+        bool IsKeyword(string);
+        TokenType FindKeywordIndex(string);
         Token ScanIdOrKeyword();
 };
 
