@@ -9,59 +9,54 @@
 
 /*
  * GRAMMAR
- * program        ->    global_vars scope
- * global_vars    ->    var_list SEMICOLON | ε
- * var_list       ->    ID | ID COMMA var_list
- * scope          ->    ID LBRACE public_vars private_vars stmt_list RBRACE
- * public_vars    ->    PUBLIC COLON var_list SEMICOLON | ε
- * private_vars   ->    PRIVATE COLON var_list SEMICOLON | ε
- * stmt_list      ->    stmt | stmt_list
- * stmt           ->    ID EQUAL ID SEMICOLON | scope
+ * program          ->      global_vars body
+ * global_vars      ->      var_decl_list | ε
+ * var_decl_list    ->      var_decl | var_decl var_decl_list
+ * var_decl         ->      var_list COLON type_name SEMICOLON
+ * var_list         ->      ID | ID COMMA var_list
+ * type_name        ->      INT | REAL | BOOL
+ * body             ->      LBRACE stmt_list RBRACE
+ * stmt_list        ->      stmt | stmt stmt_list
+ * stmt             ->      assignment_stmt | if_stmt | while_stmt | switch_stmt
+ * assignment_stmt  ->      ID EQUAL expression SEMICOLON
+ * expression       ->      primary | binary_operator expression expression | unary_operator expression
+ * unary_operator   ->      NOT
+ * binary_operator  ->      PLUS | MINUS | MULT | DIV | GREATER | LESS | GTEQ | LTEQ | EQUAL | NOTEQUAL
+ * primary          ->      ID | NUM | REALNUM | TRUE | FALSE
+ * if_stmt          ->      IF LPAREN expression RPAREN body
+ * while_stmt       ->      WHILE LPAREN expression RPAREN body
+ * switch_stmt      ->      SWITCH LPAREN expression RPAREN LBRACE case_list RBRACE
+ * case_list        ->      case | case case_list
+ * case             ->      CASE NUM COLON body
  */
 
-class Scope {
-    public:
-        std::string scope;
-        std::vector<std::string> scopes;
-        std::vector<Token> global_vars;
-        std::vector<Token> public_vars;
-        std::vector<Token> private_vars;
-        std::unordered_map<std::string, std::vector<Token>> public_scopes;
-        std::unordered_map<std::string, std::vector<Token>> private_scopes;
-        std::vector<std::pair<Token, Token>> assignments;
-        Token left;
-        Token right;
-
-        void PrintAssignments();
-        void AssignScope(Token &tok);
-
-    private:
-        bool CheckGlobal(Token&);
-        bool CheckPublic(Token&);
-        bool CheckPrivate(Token&);
-};
-
 class Parser {
-    public:
-        std::vector<Token> tokens;
+public:
+    LexicalAnalyzer lexer;
+    Token token;
+    TokenType tempTokenType;
 
-        void SyntaxError();
-        void ParseProgram();
-        Parser(std::vector<Token>);
+    int parse_program();
 
-    private:
-        Token tmp;
-        Scope vis;
-
-        void ParseGlobalVars();
-        std::vector<Token> ParseVarList();
-        void ParseScope();
-        void ParsePublicVars();
-        void ParsePrivateVars();
-        void ParseStmtList();
-        void ParseStmt();
-        void UngetToken(Token);
-        void GetToken(Token&);
+private:
+    int parse_varlist();
+    int parse_unaryOperator();
+    int parse_binaryOperator();
+    int parse_primary();
+    int parse_expression();
+    int parse_assstmt();
+    int parse_case();
+    int parse_caselist();
+    int parse_switchstmt();
+    int parse_whilestmt();
+    int parse_ifstmt();
+    int parse_stmt();
+    int parse_stmtlist();
+    int parse_body();
+    int parse_typename();
+    int parse_vardecl();
+    int parse_vardecllist();
+    int parse_globalVars();
 };
 
 #endif  //__PARSER__H__

@@ -1,20 +1,22 @@
 #!/bin/bash
 
+tests="type-checking"
 let count=0;
-for f in $(ls ./tests/parser-tests/*.txt); do
-	./a.out <$f > ./tests/parser-tests/`basename $f .txt`.output;
+
+for f in $(ls ./tests/$tests/*.txt); do
+	./a.out <$f > ./tests/$tests/`basename $f .txt`.output;
 done;
 
-for f in $(ls ./tests/parser-tests/*.output); do
-	diff -Bw $f  ./tests/parser-tests/`basename $f .output`.txt.expected > ./tests/parser-tests/`basename $f .output`.diff;
+for f in $(ls ./tests/$tests/*.output); do
+	diff -Bw $f  ./tests/$tests/`basename $f .output`.txt.expected > ./tests/$tests/`basename $f .output`.diff;
 done
 
-for f in $(ls ./tests/parser-tests/*.diff); do
+for f in $(ls ./tests/$tests/*.diff); do
 	echo -e "\n========================================================";
 	echo "FILE:" `basename $f .output`;
 	echo "========================================================";
 	if [ -s $f ]; then
-		cat ./tests/parser-tests/`basename $f .diff`.txt;
+		cat ./tests/$tests/`basename $f .diff`.txt;
 		echo "--------------------------------------------------------";
 		cat $f
 		echo "========================================================";
@@ -27,5 +29,5 @@ done
 
 echo -e "\nTESTS PASSED:" $count"/12\n";
 
-rm tests/parser-tests/*.output
-rm tests/parser-tests/*.diff
+rm tests/$tests/*.output
+rm tests/$tests/*.diff

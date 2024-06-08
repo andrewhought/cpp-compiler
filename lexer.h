@@ -7,39 +7,42 @@
 
 #include "inputbuf.h"
 
-using namespace std;
-
-typedef enum { END_OF_FILE = 0,
-    PUBLIC, PRIVATE, EQUAL, COLON,
-    COMMA, SEMICOLON, LBRACE, RBRACE,
-    ID, ERROR
+typedef enum { END_OF_FILE = 0, INT, REAL,
+    BOO, TR, FA, IF, WHILE, SWITCH, CASE,
+    PUBLIC, PRIVATE, NUM, REALNUM, NOT, PLUS,
+    MINUS, MULT, DIV, GTEQ, GREATER, LTEQ,
+    NOTEQUAL, LESS, LPAREN, RPAREN, EQUAL,
+    COLON, COMMA, SEMICOLON, LBRACE,
+    RBRACE, ID, ERROR
 } TokenType;
 
 class Token {
-    public:
-        string lexeme;
-        TokenType token_type;
-        int line_no;
+public:
+    std::string lexeme;
+    TokenType token_type;
+    int line_no;
+
+    void Print();
 };
 
 class LexicalAnalyzer {
-    public:
-        vector<Token> tokens;
+public:
+    Token GetToken();
+    TokenType UngetToken(Token);
+    LexicalAnalyzer();
 
-        void Tokenize();
-        void SaveToken(Token tok);
-        LexicalAnalyzer();
+private:
+    std::vector<Token> tokens;
+    int line_no;
+    Token tmp;
+    InputBuffer input;
 
-    private:
-        int line_no;
-        Token tmp;
-        InputBuffer input;
-
-        void SkipSpace();
-        void SkipComment();
-        bool IsKeyword(string);
-        TokenType FindKeywordIndex(string);
-        Token ScanIdOrKeyword();
+    bool SkipSpace();
+    bool SkipComments();
+    bool IsKeyword(std::string);
+    TokenType FindKeywordIndex(std::string);
+    Token ScanIdOrKeyword();
+    Token ScanNumber();
 };
 
 #endif  //__LEXER__H__

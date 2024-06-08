@@ -6,250 +6,426 @@
 
 using namespace std;
 
-void Scope::PrintAssignments()
-{
-    if (!assignments.empty()) {
-        for (std::pair<Token, Token> assignment : assignments) {
-            cout << assignment.first.lexeme << " = " << assignment.second.lexeme << endl;
-        }
-    }
-}
-
-bool Scope::CheckGlobal(Token& tok)
-{
-    for (Token var : global_vars) {
-        if (tok.lexeme == var.lexeme) {
-            tok.lexeme = "::" + tok.lexeme;
-            return true;
-        }
-    }
-    return false;
-}
-
-bool Scope::CheckPublic(Token& tok)
-{
-    for (int i = (int) this->scopes.size() - 1; i >= 0; i--) {
-        for (Token var : public_scopes[scopes[i]]) {
-            if (tok.lexeme == var.lexeme) {
-                tok.lexeme = scopes[i] + "." + tok.lexeme;
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-bool Scope::CheckPrivate(Token& tok)
-{
-    for (Token var : this->private_scopes[scope]) {
-        if (tok.lexeme == var.lexeme) {
-            tok.lexeme = scope + "." + tok.lexeme;
-            return true;
-        }
-    }
-    return false;
-}
-
-void Scope::AssignScope(Token& tok)
-{
-    if (CheckPrivate(tok)) {
-        return;
-    }
-
-    if (CheckPublic(tok)) {
-        return;
-    }
-
-    if (CheckGlobal(tok)) {
-        return;
-    }
-
-    tok.lexeme = "?." + tok.lexeme;
-}
-
-Parser::Parser(std::vector<Token> tokens)
-{
-    this->tokens = tokens;
-}
-
-void Parser::SyntaxError()
+void syntax_error()
 {
     cout << "Syntax Error\n";
     exit(1);
 }
 
-void Parser::ParseGlobalVars()
+int Parser::parse_program()
 {
-    vis.global_vars = ParseVarList();
+#ifdef DEBUG
+    cout << "Entered Parse Program" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type == ID) {
+        lexer.UngetToken(token);
+        parse_globalVars();
+        parse_body();
+    } else if (token.token_type == LBRACE) {
+        lexer.UngetToken(token);
+        parse_body();
+    } else {
+        syntax_error();
+    }
+    return 0;
 }
 
-std::vector<Token> Parser::ParseVarList()
+int Parser::parse_globalVars()
 {
-    std::vector<Token> vars;
+#ifdef DEBUG
+    cout << "Entered Parse Global Variables" << endl;
+#endif
+    parse_vardecllist();
 
-    GetToken(tmp);
-    if (tmp.token_type != ID) {
-        SyntaxError();
+    return 0;
+}
+
+int Parser::parse_vardecllist()
+{
+#ifdef DEBUG
+    cout << "Entered Parse Variable Declaration List" << endl;
+#endif
+    token = lexer.GetToken();
+    while (token.token_type == ID) {
+        lexer.UngetToken(token);
+        parse_vardecl();
+        token = lexer.GetToken();
+    }
+    lexer.UngetToken(token);
+
+    return 0;
+}
+
+int Parser::parse_vardecl()
+{
+#ifdef DEBUG
+    cout << "Entered Parse Variable Declaration" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type != ID) {
+        syntax_error();
     }
 
-    vars.push_back(tmp);
-    GetToken(tmp);
-    while (tmp.token_type != SEMICOLON) {
-        if (tmp.token_type == LBRACE) {
-            vis.scope = vars.back().lexeme;
-            vis.scopes.push_back(vis.scope);
-            UngetToken(tmp);
-            ParseScope();
-            GetToken(tmp);
-            if (tmp.token_type == END_OF_FILE) {
-                UngetToken(tmp);
-                return vars;
+    lexer.UngetToken(token);
+    parse_varlist();
+    token = lexer.GetToken();
+
+    if (token.token_type != COLON) {
+        syntax_error();
+    }
+
+    token = lexer.GetToken();
+    if (token.token_type == INT || token.token_type == REAL || token.token_type == BOO) {
+        lexer.UngetToken(token);
+        parse_typename();
+        token = lexer.GetToken();
+        if (token.token_type != SEMICOLON) {
+            syntax_error();
+        }
+    } else {
+        syntax_error();
+    }
+
+    return 0;
+}
+
+int Parser::parse_varlist()
+{
+#ifdef DEBUG
+    cout << "Entered Parse Variable List" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type != ID) {
+        syntax_error();
+    }
+    else {
+        Token t2 = lexer.GetToken();
+        if (t2.token_type == COMMA) {
+            while (token.token_type == ID && t2.token_type == COMMA) {
+                // Gather ID token info here
+                token = lexer.GetToken();
+                if (token.token_type != ID) {
+                    syntax_error();
+                }
+                t2 = lexer.GetToken();
             }
-        } else if (tmp.token_type == COMMA) {
-            GetToken(tmp);
-            if (tmp.token_type == ID) {
-                vars.push_back(tmp);
-            } else {
-                SyntaxError();
-            }
-            GetToken(tmp);
+            lexer.UngetToken(t2);
         } else {
-            SyntaxError();
+            // Gather singular ID token info here
+            lexer.UngetToken(t2);
         }
     }
-    return vars;
+    return 0;
 }
 
-void Parser::ParseScope()
+int Parser::parse_typename()
 {
-    GetToken(tmp);
-    if (tmp.token_type != LBRACE) {
-        SyntaxError();
-    }
-
-    GetToken(tmp);
-    if (tmp.token_type == PUBLIC) {
-        ParsePublicVars();
+#ifdef DEBUG
+    cout << "Entered Parse Type Name" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type == INT) {
+        // We'll be gathering info here
+    } else if (token.token_type == REAL) {
+        // We'll be gathering info here
+    } else if (token.token_type == BOO) {
+        // We'll be gathering info here
     } else {
-        UngetToken(tmp);
+        syntax_error();
     }
-
-    GetToken(tmp);
-    if (tmp.token_type == PRIVATE) {
-        ParsePrivateVars();
-    } else {
-        UngetToken(tmp);
-    }
-
-    ParseStmtList();
-
-    GetToken(tmp);
-    if (tmp.token_type != RBRACE) {
-        SyntaxError();
-    }
-
-    vis.scopes.pop_back();
-    if (!vis.scopes.empty()) {
-        vis.scope = vis.scopes.back();
-    }
+    return 0;
 }
 
-void Parser::ParsePublicVars()
+int Parser::parse_body()
 {
-    GetToken(tmp);
-
-    if (tmp.token_type != COLON) {
-        SyntaxError();
-    }
-
-    vis.public_vars = ParseVarList();
-    vis.public_scopes[vis.scope] = vis.public_vars;
-}
-
-void Parser::ParsePrivateVars()
-{
-    GetToken(tmp);
-
-    if (tmp.token_type != COLON) {
-        SyntaxError();
-    }
-
-    vis.private_vars = ParseVarList();
-    vis.private_scopes[vis.scope] = vis.private_vars;
-}
-
-void Parser::ParseStmtList()
-{
-    GetToken(tmp);
-
-    if (tmp.token_type != ID) {
-        SyntaxError();
-    } else {
-        while (tmp.token_type == ID) {
-            UngetToken(tmp);
-            ParseStmt();
-            GetToken(tmp);
+#ifdef DEBUG
+    cout << "Entered Parse Body" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type == LBRACE) {
+        parse_stmtlist();
+        token = lexer.GetToken();
+        if (token.token_type != RBRACE) {
+            syntax_error();
         }
-        UngetToken(tmp);
-    }
-}
-
-void Parser::ParseStmt()
-{
-    GetToken(tmp);
-    vis.left = tmp;
-
-    GetToken(tmp);
-    if (tmp.token_type == LBRACE) {
-        vis.scope = vis.left.lexeme;
-        vis.scopes.push_back(vis.scope);
-        UngetToken(tmp);
-        ParseScope();
-    } else if (tmp.token_type == EQUAL) {
-        vis.AssignScope(vis.left);
-
-        GetToken(tmp);
-        if (tmp.token_type != ID) {
-            SyntaxError();
-        }
-
-        vis.right = tmp;
-        vis.AssignScope(vis.right);
-
-        GetToken(tmp);
-        if (tmp.token_type != SEMICOLON) {
-            SyntaxError();
-        }
-
-        vis.assignments.push_back(make_pair(vis.left, vis.right));
     } else {
-        SyntaxError();
-    }
-}
-
-void Parser::UngetToken(Token tok)
-{
-    tokens.push_back(tok);
-}
-
-void Parser::GetToken(Token& tok)
-{
-    if (!tokens.empty()) {
-        tok = tokens.back();
-        tokens.pop_back();
-    }
-}
-
-void Parser::ParseProgram()
-{
-    ParseGlobalVars();
-
-    GetToken(tmp);
-    if (tmp.token_type != END_OF_FILE) {
-        vis.scope = tmp.lexeme;
-        vis.scopes.push_back(vis.scope);
-        ParseScope();
+        syntax_error();
     }
 
-    vis.PrintAssignments();
+    return 0;
+}
+
+int Parser::parse_stmtlist()
+{
+#ifdef DEBUG
+    cout << "Entered Parse Statement List" << endl;
+#endif
+    token = lexer.GetToken();
+    while (token.token_type == ID || token.token_type == IF || token.token_type == WHILE || token.token_type == SWITCH) {
+        lexer.UngetToken(token);
+        parse_stmt();
+        token = lexer.GetToken();
+    }
+    lexer.UngetToken(token);
+
+    return 0;
+}
+
+int Parser::parse_stmt()
+{
+#ifdef DEBUG
+    cout << "Entered Parse Statement" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type == ID) {
+        lexer.UngetToken(token);
+        parse_assstmt();
+    } else if (token.token_type == IF) {
+        lexer.UngetToken(token);
+        parse_ifstmt();
+    } else if(token.token_type == WHILE) {
+        lexer.UngetToken(token);
+        parse_whilestmt();
+    } else if (token.token_type == SWITCH) {
+        lexer.UngetToken(token);
+        parse_switchstmt();
+    } else {
+        syntax_error();
+    }
+    return 0;
+}
+
+int Parser::parse_assstmt()
+{
+#ifdef DEBUG
+    cout << "Entered Parse Assignment Statement" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type != ID) {
+        syntax_error();
+    }
+    // Do something with ID
+    token = lexer.GetToken();
+    if (token.token_type != EQUAL) {
+        syntax_error();
+    }
+    parse_expression();
+    token = lexer.GetToken();
+    if (token.token_type != SEMICOLON) {
+        syntax_error();
+    }
+    return 0;
+}
+
+int Parser::parse_expression()
+{
+#ifdef DEBUG
+    cout << "Entered Parse Expression" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type == NOT) {
+        lexer.UngetToken(token);
+        parse_unaryOperator();
+        parse_expression();
+    } else if (token.token_type == PLUS || token.token_type == MINUS || token.token_type == MULT ||  token.token_type == DIV) {
+        lexer.UngetToken(token);
+        parse_binaryOperator();
+        parse_expression();
+        parse_expression();
+    } else if (token.token_type == GREATER || token.token_type == LESS || token.token_type == GTEQ || token.token_type == LTEQ || token.token_type == EQUAL || token.token_type == NOTEQUAL) {
+        lexer.UngetToken(token);
+        parse_binaryOperator();
+        parse_expression();
+        parse_expression();
+    } else if(token.token_type == ID || token.token_type == NUM || token.token_type == REALNUM || token.token_type == TR || token.token_type == FA) {
+        lexer.UngetToken(token);
+        parse_primary();
+    } else {
+        syntax_error();
+    }
+    return 0;
+}
+
+int Parser::parse_unaryOperator()
+{
+#ifdef DEBUG
+    cout << "Entered Parse Unary Operator" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type != NOT) {
+        syntax_error();
+    }
+    //Do something with the NOT
+    return 0;
+}
+
+int Parser::parse_binaryOperator()
+{
+#ifdef DEBUG
+    cout << "Entered Binary Operator" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type == PLUS || token.token_type == MINUS || token.token_type == MULT ||  token.token_type == DIV) {
+        // Do something with these Tokens
+    } else if (token.token_type == GREATER || token.token_type == LESS || token.token_type == GTEQ || token.token_type == LTEQ || token.token_type == EQUAL || token.token_type == NOTEQUAL) {
+        // Do something with these Tokens
+    } else {
+        syntax_error();
+    }
+    return 0;
+}
+
+int Parser::parse_primary()
+{
+#ifdef DEBUG
+    cout << "Entered Parse Primary" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type == ID || token.token_type == NUM || token.token_type == REALNUM || token.token_type == TR || token.token_type == FA) {
+        // Do something with these Tokens
+    } else {
+        syntax_error();
+    }
+    return 0;
+}
+
+int Parser::parse_ifstmt()
+{
+#ifdef DEBUG
+    cout << "Entered Parse If Statement" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type != IF) {
+        syntax_error();
+    }
+
+    token = lexer.GetToken();
+    if (token.token_type != LPAREN) {
+        syntax_error();
+    }
+
+    parse_expression();
+    token = lexer.GetToken();
+    if (token.token_type != RPAREN) {
+        syntax_error();
+    }
+    parse_body();
+
+    return 0;
+}
+
+int Parser::parse_whilestmt()
+{
+#ifdef DEBUG
+    cout << "Entered Parse While Statement" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type != WHILE) {
+        syntax_error();
+    }
+
+    token = lexer.GetToken();
+    if (token.token_type != LPAREN) {
+        syntax_error();
+    }
+
+    parse_expression();
+    token = lexer.GetToken();
+    if (token.token_type != RPAREN) {
+        syntax_error();
+    }
+    parse_body();
+
+    return 0;
+}
+
+int Parser::parse_switchstmt()
+{
+#ifdef DEBUG
+    cout << "Entered Switch Statement" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type != SWITCH) {
+        syntax_error();
+    }
+
+    token = lexer.GetToken();
+    if (token.token_type != LPAREN) {
+        syntax_error();
+    }
+
+    parse_expression();
+    token = lexer.GetToken();
+    if (token.token_type != RPAREN) {
+        syntax_error();
+    }
+
+    token = lexer.GetToken();
+    if (token.token_type != LBRACE) {
+        syntax_error();
+    }
+
+    parse_caselist();
+    token = lexer.GetToken();
+    if (token.token_type != RBRACE) {
+        syntax_error();
+    }
+    return 0;
+}
+
+int Parser::parse_caselist()
+{
+#ifdef DEBUG
+    cout << "Entered Parse Case List" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type == CASE) {
+        while (token.token_type == CASE) {
+            lexer.UngetToken(token);
+            parse_case();
+            token = lexer.GetToken();
+        }
+        lexer.UngetToken(token);
+    } else {
+        syntax_error();
+    }
+    return 0;
+}
+
+int Parser::parse_case()
+{
+#ifdef DEBUG
+    cout << "Entered Parse Case" << endl;
+#endif
+    token = lexer.GetToken();
+    if (token.token_type != CASE) {
+        syntax_error();
+    }
+
+    token = lexer.GetToken();
+    if (token.token_type != NUM) {
+        syntax_error();
+    }
+    // Do something with this
+    token = lexer.GetToken();
+    if (token.token_type != COLON) {
+        syntax_error();
+    }
+    parse_body();
+
+    return 0;
+}
+
+int main()
+{
+#ifdef DEBUG
+    cout << "Entered Main" << endl;
+#endif
+
+    int i;
+    Parser* parseProgram = new Parser();
+    i = parseProgram->parse_program();
+    cout << "\nEnd of Program" << endl;
+    return 0;
 }
